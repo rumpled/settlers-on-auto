@@ -1,0 +1,266 @@
+
+<html>
+   <head>
+      <style type="text/css">
+         .sikuli-code {
+            font-size: 20px;
+            font-family: "Osaka-mono", Monospace;
+            line-height: 1.5em;
+            display:table-cell;
+            white-space: pre-wrap;       /* css-3 */
+            white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
+            white-space: -pre-wrap;      /* Opera 4-6 */
+            white-space: -o-pre-wrap;    /* Opera 7 */
+            word-wrap: break-word;       /* Internet Explorer 5.5+ */
+            width: 99%;   /* remove horizontal scroll-bar when viewing in IE7 */
+         }
+         .sikuli-code img {
+            vertical-align: middle;
+            margin: 2px;
+            border: 1px solid #ccc;
+            padding: 2px;
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            -moz-box-shadow: 1px 1px 1px gray;
+            -webkit-box-shadow: 1px 1px 2px gray;
+         }
+         .kw {
+            color: blue;
+         }
+         .skw {
+            color: rgb(63, 127, 127);
+         }
+
+         .str {
+            color: rgb(128, 0, 0);
+         }
+
+         .dig {
+            color: rgb(128, 64, 0);
+         }
+
+         .cmt {
+            color: rgb(200, 0, 200);
+         }
+
+         h2 {
+            display: inline;
+            font-weight: normal;
+         }
+
+         .info {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+            display: none;
+         }
+
+         a {
+            color: #9D2900;
+         }
+
+         body {
+            font-family: "Trebuchet MS", Arial, Sans-Serif;
+         }
+
+      </style>
+   </head>
+<body>
+<div class="info">
+<h2>util.sikuli</h2> <a href="util.zip">(Download this script)</a>
+</div>
+<pre class="sikuli-code">
+<span class="kw">from</span> sikuli <span class="kw">import</span> * <span class="cmt"># include sikuli functionality</span>
+
+<span class="kw">import</span> sys
+sys.path.append(<span class="str">'/Library/Python/2.7/site-packages/'</span>)
+<span class="kw">import</span> yaml
+<span class="kw">import</span> datetime
+
+<span class="kw">import</span> pprint <span class="cmt"># pretty printing    pprint.pprint(var)</span>
+
+<span class="kw">def</span> init():
+    log(<span class="str">"script starting"</span>)
+    Settings.MoveMouseDelay = <span class="dig">0.1</span>
+
+star_button_region = Region(<span class="dig">662</span>,<span class="dig">713</span>,<span class="dig">61</span>,<span class="dig">187</span>) <span class="cmt"># 662,713,61,187</span>
+star_menu_region = Region(<span class="dig">504</span>,<span class="dig">462</span>,<span class="dig">380</span>,<span class="dig">372</span>)
+deposit_region = Region(<span class="dig">685</span>,<span class="dig">406</span>,<span class="dig">77</span>,<span class="dig">83</span>)
+star_button = <img src="star_button.png" />
+mail_button = <img src="mail_button.png" />
+mail_window = Region(<span class="dig">399</span>,<span class="dig">312</span>,<span class="dig">587</span>,<span class="dig">396</span>)
+mail_window_down_arrow = Pattern(<img src="1380842794098.png" />).targetOffset(<span class="dig">1</span>,-<span class="dig">1</span>)
+mail_window_up_arrow = <img src="1380842830987.png" />
+mail_window_accept_button = Pattern(<img src="1380843362797.png" />).similar(<span class="dig">0.90</span>)
+mail_window_hit_bottom = Pattern(<img src="1380843203943.png" />).exact()
+mail_messages = {
+    <span class="str">'explorer_found'</span>  : Pattern(<img src="subject_explorer_has.png" />).similar(<span class="dig">0.60</span>),
+    <span class="str">'quest_reward'</span>    : Pattern(<img src="subject_quest_reward.png" />).similar(<span class="dig">0.60</span>)
+                }
+
+slider = Pattern(<img src="slider.png" />).similar(<span class="dig">0.80</span>)
+arrow_right = Pattern(<img src="arrow_right.png" />).exact()
+ok_button = <img src="ok_button.png" />
+
+star_menu_down_arrow = Pattern(<img src="1378649228044.png" />).exact()
+star_menu_up_arrow   = Pattern(<img src="1378649285738.png" />).exact()
+fish_deposit         = Pattern(<img src="1377916260565.png" />).exact()
+fish_spot            = Pattern(<img src="1377948158588.png" />).similar(<span class="dig">0.60</span>).targetOffset(<span class="dig">0</span>,<span class="dig">2</span>)
+meat_deposit         = Pattern(<img src="1377916866502.png" />).exact()
+meat_spot            = Pattern(<img src="1377936157136.png" />).similar(<span class="dig">0.60</span>)
+resources = {
+        <span class="str">'brew'</span>        : Pattern(<img src="resource_brew.png" />).exact(),
+<span class="cmt">#        'balloons'    : Pattern("resource_balloons.png").exact(),</span>
+        <span class="str">'gold_ore'</span>    : Pattern(<img src="resource_gold_ore.png" />).exact(),
+        <span class="str">'coal'</span>        : Pattern(<img src="resource_coal.png" />).exact(),
+        <span class="str">'exotic_logs'</span> : Pattern(<img src="resource_exotic_wood.png" />).exact(),
+        <span class="str">'gold_coins'</span>  : Pattern(<img src="resource_gold_coins.png" />).exact(),
+        <span class="str">'granite'</span>     : Pattern(<img src="resource_granite.png" />).exact(),
+        <span class="str">'guild_coins'</span> : Pattern(<img src="resource_guild_coins.png" />).exact(),
+        <span class="str">'map_frags'</span>   : Pattern(<img src="resource_map_fragments.png" />).exact(),
+        <span class="str">'iron_swords'</span> : Pattern(<img src="resource_iron_swords.png" />).exact(),
+        <span class="str">'longbows'</span>    : Pattern(<img src="resource_longbows.png" />).exact(),
+        <span class="str">'marble'</span>      : Pattern(<img src="resource_marble.png" />).exact()
+    }
+
+star_menu_tabs = {
+        <span class="str">'all'</span>         : <img src="1378669529209.png" />,
+        <span class="str">'specialists'</span> : Pattern(<img src="1378669558019.png" />).similar(<span class="dig">0.65</span>),
+        <span class="str">'buffs'</span>       : <img src="1378669594187.png" />,
+        <span class="str">'resources'</span>   : <img src="1378669616255.png" />,
+        <span class="str">'misc'</span>        : <img src="1378669629687.png" />
+    }
+
+ph_items = {
+        <span class="str">'fishfood'</span>    : <img src="ph_items-fishfood.png" />,
+        <span class="str">'deer_musk'</span>   : Pattern(<img src="ph_items-deer_musk.png" />).similar(<span class="dig">0.65</span>),
+        <span class="str">'aunt_irma'</span>   : <img src="ph_items-aunt_irma.png" />
+    }
+
+building_windows = {
+        <span class="str">'provision_house'</span>: {
+            <span class="str">'top_left'</span>    : Pattern(<img src="ph_top_left.png" />).similar(<span class="dig">0.85</span>),
+            <span class="str">'bottom'</span>: <img src="ph_bottom.png" />,
+            <span class="str">'bottom_halloween'</span>: Pattern(<img src="ph_bottom_halloween.png" />).similar(<span class="dig">0.60</span>),
+            <span class="str">'product_region_top'</span> : Pattern(<img src="ph_product_region_top.png" />).exact(),
+            <span class="str">'queue_region_top_left'</span> : Pattern(<img src="ph_queue_region_top_left.png" />).exact()
+        }
+    }
+
+building_regions = {
+        <span class="str">'provision_house'</span> : {
+            <span class="str">'main'</span> : None,
+            <span class="str">'product_region'</span> : None
+        }
+    }
+
+<span class="kw">def</span> ph_test():
+    tl = <span class="skw">find</span>(building_windows[<span class="str">'provision_house'</span>][<span class="str">'top_left'</span>])
+    <span class="cmt">#tl.highlight(1)
+</span>    b = <span class="skw">find</span>(building_windows[<span class="str">'provision_house'</span>][<span class="str">'bottom_halloween'</span>])
+    <span class="cmt">#b.highlight(1)
+</span>
+    building_regions[<span class="str">'provision_house'</span>][<span class="str">'main'</span>] = Region(tl.x, tl.y, (b.x+b.w)-tl.x, (b.y+b.h)-tl.y)
+    ph_region = building_regions[<span class="str">'provision_house'</span>][<span class="str">'main'</span>]
+    <span class="cmt">#ph_region.highlight(1)
+</span>
+    product_region_top = ph_region.<span class="skw">find</span>(building_windows[<span class="str">'provision_house'</span>][<span class="str">'product_region_top'</span>])
+    <span class="cmt">#product_region_top.highlight(1)
+</span>    range = (ph_region.y+ph_region.h+<span class="dig">20</span>)-(product_region_top.y+b.h)
+
+    building_regions[<span class="str">'provision_house'</span>][<span class="str">'product_region'</span>] = product_region_top.below(range)
+    <span class="cmt">#building_regions['provision_house']['product_region'].highlight(1)
+</span>
+<span class="kw">def</span> reset():
+    log(<span class="str">'reset called'</span>)
+    <span class="skw">type</span>(<span class="str">'0'</span>)
+    mouseMove(getCenter())
+    <span class="skw">click</span>(getCenter())
+    <span class="skw">click</span>(getCenter())
+
+<span class="kw">def</span> move_to_deposit(sector, number, deposit_list):
+    log(<span class="str">"move_to_deposit called for sector #%(sector)d deposit #%(number)d"</span> % vars())
+
+    App.focus(<span class="str">'/Applications/Google Chrome.app'</span>)
+
+    reset() <span class="cmt"># standardize zoom level</span>
+
+    <span class="skw">type</span>(str(sector)) <span class="cmt"># move to sector</span>
+
+    xstep,ystep = deposit_list[sector][number].values() <span class="cmt"># extract coords from dataset</span>
+    log(<span class="str">"starting with xstep=%d, ystep=%d"</span> % (xstep,ystep))
+
+    <span class="kw">while</span> xstep != <span class="dig">0</span> <span class="kw">or</span> ystep != <span class="dig">0</span>:
+        <span class="kw">if</span> abs(xstep) &gt; <span class="dig">200</span>:
+            xmove = <span class="dig">200</span> <span class="kw">if</span> xstep &gt; <span class="dig">0</span> <span class="kw">else</span> -<span class="dig">200</span>
+        <span class="kw">else</span>:
+            xmove = xstep
+
+        <span class="kw">if</span> abs(ystep) &gt; <span class="dig">200</span>:
+            ymove = <span class="dig">200</span> <span class="kw">if</span> ystep &gt; <span class="dig">0</span> <span class="kw">else</span> -<span class="dig">200</span>
+        <span class="kw">else</span>:
+            ymove = ystep
+
+        move(xmove, ymove)
+
+        xstep -= xmove
+        ystep -= ymove
+
+<span class="kw">def</span> move(xstep, ystep):
+    log(<span class="str">"move called with xstep=%s and ystep=%s"</span> % (xstep, ystep))
+    <span class="skw">dragDrop</span>(getCenter().offset(xstep,ystep),getCenter())
+
+<span class="kw">def</span> place_deposit(deposit_type, deposit_spot):
+    star_button_region.<span class="skw">click</span>(star_button)
+    star_menu_region.<span class="skw">wait</span>(deposit_type).<span class="skw">click</span>(deposit_type)
+    <span class="cmt"># for fish deposits, move mouse to update buff location so we can find the deposit spot
+</span>    time.<span class="skw">sleep</span>(<span class="dig">0.2</span>)
+    mouseMove(getCenter().left(<span class="dig">100</span>))
+    time.<span class="skw">sleep</span>(<span class="dig">0.4</span>)
+
+    deposit_region.<span class="skw">wait</span>(deposit_spot).<span class="skw">click</span>(deposit_spot)
+    time.<span class="skw">sleep</span>(<span class="dig">0.3</span>)
+
+<span class="kw">def</span> get_deposit_from_user(deposit_type):
+<span class="cmt">#    popup("You are going to be depositing %s" % deposit_type)
+</span>
+    sector = int(<span class="skw">input</span>(<span class="str">"(%s) Enter the sector"</span> % deposit_type,<span class="str">'0'</span>))
+<span class="cmt">#    sector = 9
+</span>    deposit_number = int(<span class="skw">input</span>(<span class="str">"(%s) Enter the deposit number"</span> % deposit_type,<span class="str">'0'</span>))
+<span class="cmt">#    deposit_number = 1
+</span>
+    <span class="kw">if</span> sector == <span class="dig">0</span> <span class="kw">or</span> deposit_number == <span class="dig">0</span>:
+        <span class="skw">popup</span>(<span class="str">"Give some input, jackass!"</span>)
+        <span class="kw">raise</span> Exception(<span class="str">'Invalid input entered'</span>)
+
+    file_path = <span class="str">"/Users/jasonblank/settlers-online/sikuli-scripts/"</span>
+
+    <span class="kw">if</span> deposit_type == <span class="str">'fish'</span>:
+        file_to_load = file_path + <span class="str">'fish_locations.yml'</span>
+    <span class="kw">elif</span> deposit_type == <span class="str">'meat'</span>:
+        file_to_load = file_path + <span class="str">'meat_locations.yml'</span>
+    <span class="kw">else</span>:
+        <span class="skw">popup</span>(<span class="str">"Invalid deposit type [%s]"</span> % deposit_type)
+
+
+    file_handle = open(file_to_load,<span class="str">'r'</span>)
+    deposit_locations = yaml.safe_load(file_handle)
+    file_handle.close()
+
+    <span class="kw">return</span> (sector, deposit_number, deposit_locations)
+
+<span class="kw">def</span> deposit_resource(res):
+    <span class="kw">try</span>:
+        star_menu_region.<span class="skw">click</span>(res)
+        <span class="skw">sleep</span>(<span class="dig">0.3</span>)
+        mouseMove(getCenter().left(-<span class="dig">100</span>))
+        <span class="skw">sleep</span>(<span class="dig">0.5</span>)
+        <span class="skw">click</span>(getCenter())
+    <span class="kw">except</span> Exception, ex:
+        log(<span class="str">"Exception: "</span> + ex)
+
+<span class="kw">def</span> log(message):
+    <span class="kw">print</span> <span class="str">"["</span> + str(datetime.datetime.now()) + <span class="str">"] "</span> + message
+</pre>
+</body>
+</html>
