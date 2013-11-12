@@ -1,0 +1,491 @@
+
+<html>
+   <head>
+      <style type="text/css">
+         .sikuli-code {
+            font-size: 20px;
+            font-family: "Osaka-mono", Monospace;
+            line-height: 1.5em;
+            display:table-cell;
+            white-space: pre-wrap;       /* css-3 */
+            white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
+            white-space: -pre-wrap;      /* Opera 4-6 */
+            white-space: -o-pre-wrap;    /* Opera 7 */
+            word-wrap: break-word;       /* Internet Explorer 5.5+ */
+            width: 99%;   /* remove horizontal scroll-bar when viewing in IE7 */
+         }
+         .sikuli-code img {
+            vertical-align: middle;
+            margin: 2px;
+            border: 1px solid #ccc;
+            padding: 2px;
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            -moz-box-shadow: 1px 1px 1px gray;
+            -webkit-box-shadow: 1px 1px 2px gray;
+         }
+         .kw {
+            color: blue;
+         }
+         .skw {
+            color: rgb(63, 127, 127);
+         }
+
+         .str {
+            color: rgb(128, 0, 0);
+         }
+
+         .dig {
+            color: rgb(128, 64, 0);
+         }
+
+         .cmt {
+            color: rgb(200, 0, 200);
+         }
+
+         h2 {
+            display: inline;
+            font-weight: normal;
+         }
+
+         .info {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+            display: none;
+         }
+
+         a {
+            color: #9D2900;
+         }
+
+         body {
+            font-family: "Trebuchet MS", Arial, Sans-Serif;
+         }
+
+      </style>
+   </head>
+<body>
+<div class="info">
+<h2>classes.sikuli</h2> <a href="classes.zip">(Download this script)</a>
+</div>
+<pre class="sikuli-code">
+<span class="kw">from</span> sikuli <span class="kw">import</span> *
+<span class="kw">import</span> org.sikuli.script.FindFailed <span class="kw">as</span> FindFailed
+
+<span class="kw">import</span> sys
+<span class="kw">import</span> os.path
+<span class="kw">import</span> datetime
+<span class="kw">import</span> yaml
+
+Settings.MoveMouseDelay = <span class="dig">0</span>
+
+applications = {
+    <span class="str">'Darwin'</span>   : <span class="str">'/Applications/Google Chrome.app'</span>,
+    <span class="str">'Mac OS X'</span> : <span class="str">'/Applications/Google Chrome.app'</span>,
+    <span class="str">'Linux'</span>    : <span class="str">'/usr/bin/chromium-browser'</span>
+}
+
+<span class="kw">import</span> java.lang.System
+os_name = java.lang.System.getProperty(<span class="str">'os.name'</span>)
+app_path = applications[os_name]
+browser = App(app_path)
+
+<span class="kw">def</span> log(message):
+    <span class="kw">print</span> <span class="str">"["</span> + str(datetime.datetime.now()) + <span class="str">"] "</span> + message
+
+button_ok = Pattern(<img src="button_ok.png" />)
+button_close = Pattern(<img src="button_close.png" />)
+button_accept  = Pattern(<img src="button_accept.png" />)
+current_sector = None
+
+<span class="kw">class</span> BaseWindow(object):
+    <span class="str">"""An abstract for functionality shared between things that pop up windows"""</span>
+    <span class="cmt"># set by child elements
+</span>    <span class="cmt"># button          | button to open this window
+</span>    <span class="cmt"># dimensions      | size of window
+</span>    <span class="cmt"># offset          | between x/y of key and actual region
+</span>    <span class="cmt"># key             | letter used to open window
+</span>    <span class="cmt"># key_image       | unique element to identify this region's window
+</span>    <span class="cmt"># key_image_match | stores key_image match
+</span>
+    <span class="kw">def</span> __init__(self):
+        self.key = None <span class="cmt"># key to open window</span>
+        self.button_region = None <span class="cmt"># stores button match</span>
+        self.window_region = None <span class="cmt"># window's whole region</span>
+
+        <span class="cmt"># this might be declared in a sub-class
+</span>        <span class="kw">if</span> <span class="kw">not</span> hasattr(self, <span class="str">'id'</span>):
+            self.id = str(self.__class__.__name__).lower()
+        <span class="kw">if</span> <span class="kw">not</span> hasattr(self, <span class="str">'key_image'</span>):
+            self.key_image = Pattern(<img src="window_%(id)s_key.png" /> % {<span class="str">'id'</span>:self.id}).similar(<span class="dig">0.85</span>)
+        <span class="kw">if</span> <span class="kw">not</span> hasattr(self, <span class="str">'button'</span>):
+            self.button = Pattern(<img src="button_%(id)s.png" /> % {<span class="str">'id'</span>:self.id}).similar(<span class="dig">0.60</span>)
+        self.get_button_region()
+
+    <span class="kw">def</span> open(self):
+        self.show_window()
+        <span class="kw">if</span> <span class="kw">not</span> hasattr(self, <span class="str">'key_image_match'</span>):
+            self.key_image_match = <span class="skw">find</span>(self.key_image)
+            self.window_region = Region(
+                self.key_image_match.getX() + self.offset[<span class="str">'x'</span>],
+                self.key_image_match.getY() + self.offset[<span class="str">'y'</span>],
+                self.dimensions[<span class="str">'width'</span>],
+                self.dimensions[<span class="str">'height'</span>]
+            )
+            self.get_sub_regions()
+
+    <span class="cmt"># override this to have a custom window opening method, such as mayor's house
+</span>    <span class="kw">def</span> show_window(self):
+        <span class="kw">try</span>:
+            <span class="skw">find</span>(self.key_image) <span class="cmt"># screen context</span>
+        <span class="kw">except</span> FindFailed:
+            self.button_region.<span class="skw">click</span>()
+
+    <span class="kw">def</span> close(self):
+        <span class="kw">try</span>:
+            self.window_region.<span class="skw">click</span>(button_close)
+        <span class="kw">except</span> FindFailed:
+            log(<span class="str">"close button not found, nothing to do!"</span>)
+
+    <span class="kw">def</span> get_button_region(self):
+        <span class="kw">if</span> self.button_region <span class="kw">is</span> None:
+            self.button_region = <span class="skw">find</span>(self.button)
+
+    <span class="kw">def</span> get_sub_regions(self):
+        <span class="kw">pass</span> <span class="cmt"># stub</span>
+
+<span class="kw">class</span> ProvisionHouse(BaseWindow):
+    dimensions = { <span class="str">'width'</span>:<span class="dig">578</span>, <span class="str">'height'</span>:<span class="dig">415</span> }
+    offset = { <span class="str">'x'</span>:<span class="dig">0</span>, <span class="str">'y'</span>:<span class="dig">0</span> }
+    button = None
+
+    tabs = {
+        <span class="str">'buffs'</span> : Pattern(<img src="provisionhouse_tab_buffs.png" />),
+        <span class="str">'resources'</span> : Pattern(<img src="provisionhouse_tab_resources.png" />),
+        <span class="str">'deposits'</span> : Pattern(<img src="provisionhouse_tab_deposits.png" />),
+        <span class="str">'event'</span> : Pattern(<img src="provisionhouse_tab_event.png" />),
+    }
+
+    products = {
+        <span class="str">'fish_platter'</span> : Pattern(<img src="product_fish_platter.png" />),
+        <span class="str">'solid_sandwich'</span> : Pattern(<img src="product_solid_sandwich.png" />),
+        <span class="str">'fish_food'</span> : Pattern(<img src="product_fish_food.png" />),
+        <span class="str">'deer_musk'</span> : Pattern(<img src="product_deer_musk.png" />),
+        <span class="cmt"># '' : Pattern("product_.png"),</span>
+        <span class="cmt"># '' : Pattern("product_.png"),</span>
+        <span class="cmt"># '' : Pattern("product_.png"),</span>
+        <span class="cmt"># '' : Pattern("product_.png"),</span>
+        <span class="cmt"># '' : Pattern("product_.png"),</span>
+        <span class="str">'aunt_irma'</span> : Pattern(<img src="product_aunt_irma.png" />)
+    }
+
+    <span class="kw">def</span> show_window(self):
+        <span class="skw">type</span>(<span class="str">"p"</span>)
+
+    <span class="kw">def</span> get_button_region(self):
+        <span class="kw">pass</span>
+
+    <span class="kw">def</span> get_sub_regions(self):
+        self.product_region = Region( <span class="cmt"># x,y,w,h</span>
+            self.window_region.getX() + <span class="dig">167</span>,
+            self.window_region.getY() + <span class="dig">107</span>,
+            <span class="dig">158</span>,
+            <span class="dig">276</span>
+        )
+        self.queue_region = Region( <span class="cmt"># x,y,w,h</span>
+            self.window_region.getX() + <span class="dig">331</span>,
+            self.window_region.getY() + <span class="dig">93</span>,
+            <span class="dig">225</span>,
+            <span class="dig">289</span>
+        )
+        self.tab_region = Region( <span class="cmt"># x,y,w,h</span>
+            self.window_region.getX() + <span class="dig">0</span>,
+            self.window_region.getY() + <span class="dig">388</span>,
+            <span class="dig">578</span>,
+            <span class="dig">26</span>
+        )
+
+<span class="kw">class</span> StarMenu(BaseWindow):
+    <span class="str">"""The star menu.  Does almost everything."""</span>
+    dimensions = { <span class="str">'width'</span>:<span class="dig">388</span>, <span class="str">'height'</span>:<span class="dig">255</span> }
+    offset = { <span class="str">'x'</span>:-<span class="dig">70</span>, <span class="str">'y'</span>:<span class="dig">26</span> }
+
+    tabs = {
+        <span class="str">'all'</span> : Pattern(<img src="starmenu_tab_all.png" />),
+        <span class="str">'specialists'</span> : Pattern(<img src="starmenu_tab_specialists.png" />),
+        <span class="str">'buffs'</span> : Pattern(<img src="starmenu_tab_buffs.png" />),
+        <span class="str">'resources'</span> : Pattern(<img src="starmenu_tab_resources.png" />),
+        <span class="str">'misc'</span> : Pattern(<img src="starmenu_tab_misc.png" />),
+    }
+
+    actors = {
+        <span class="str">'explorers'</span> : {
+            <span class="str">'experienced_explorer'</span> : Pattern(<img src="button_experienced_explorer.png" />).similar(<span class="dig">0.90</span>),
+            <span class="str">'savage_scout'</span> : Pattern(<img src="button_savage_scout.png" />).similar(<span class="dig">0.90</span>),
+            <span class="str">'explorer'</span> : Pattern(<img src="button_explorer.png" />).similar(<span class="dig">0.90</span>)
+        },
+        <span class="str">'geologists'</span> : {
+            <span class="str">'jolly_geologist'</span> : Pattern(<img src="button_jolly_geologist.png" />).similar(<span class="dig">0.90</span>),
+            <span class="str">'geologist'</span> : Pattern(<img src="button_geologist.png" />).similar(<span class="dig">0.90</span>)
+        }
+    }
+
+    resources = {
+        <span class="str">'brew'</span>            : Pattern(<img src="resource_brew.png" />).exact(),
+        <span class="str">'balloons'</span>        : Pattern(<img src="resource_balloons.png" />).exact(),
+        <span class="str">'gold_ore'</span>        : Pattern(<img src="resource_gold_ore.png" />).exact(),
+        <span class="cmt"># 'coal'            : Pattern("resource_coal.png").exact(),</span>
+        <span class="str">'exotic_logs'</span>     : Pattern(<img src="resource_exotic_wood.png" />).exact(),
+        <span class="str">'gold_coins'</span>      : Pattern(<img src="resource_gold_coins.png" />).exact(),
+        <span class="str">'granite'</span>         : Pattern(<img src="resource_granite.png" />).exact(),
+        <span class="str">'guild_coins'</span>     : Pattern(<img src="resource_guild_coins.png" />).exact(),
+        <span class="str">'map_frags'</span>       : Pattern(<img src="resource_map_fragments.png" />).exact(),
+        <span class="str">'iron_swords'</span>     : Pattern(<img src="resource_iron_swords.png" />).exact(),
+        <span class="str">'longbows'</span>        : Pattern(<img src="resource_longbows.png" />).exact(),
+        <span class="str">'marble'</span>          : Pattern(<img src="resource_marble.png" />).exact(),
+        <span class="str">'copper_ore'</span>      : Pattern(<img src="resource_copper_ore.png" />).exact(),
+        <span class="str">'bows'</span>            : Pattern(<img src="resource_bows.png" />).exact(),
+        <span class="str">'hardwood_planks'</span> : Pattern(<img src="resource_hardwood_planks.png" />).exact(),
+        <span class="str">'pinewood_planks'</span> : Pattern(<img src="resource_pinewood_planks.png" />).exact(),
+        <span class="str">'titanium'</span>        : Pattern(<img src="resource_titanium.png" />).exact(),
+        <span class="str">'steel_swords'</span>    : Pattern(<img src="resource_steel_swords.png" />).exact(),
+        <span class="str">'steel'</span>           : Pattern(<img src="resource_steel.png" />).exact(),
+        <span class="str">'crossbows'</span>       : Pattern(<img src="resource_crossbows.png" />).exact(),
+        <span class="cmt"># '' : Pattern("resource_.png").exact(),</span>
+        <span class="cmt"># '' : Pattern("resource_.png").exact(),</span>
+        <span class="cmt"># '' : Pattern("resource_.png").exact(),</span>
+        <span class="cmt"># '' : Pattern("resource_.png").exact(),</span>
+        <span class="cmt"># '' : Pattern("resource_.png").exact(),</span>
+        <span class="cmt"># '' : Pattern("resource_.png").exact(),</span>
+        <span class="cmt"># '' : Pattern("resource_.png").exact(),</span>
+        <span class="cmt"># '' : Pattern("resource_.png").exact(),</span>
+        <span class="str">'saltpeter'</span>       : Pattern(<img src="resource_saltpeter.png" />).exact()
+    }
+
+    <span class="kw">def</span> get_sub_regions(self):
+        self.resource_region = Region( <span class="cmt"># x,y,w,h</span>
+            self.window_region.getX() + <span class="dig">7</span>,
+            self.window_region.getY() + <span class="dig">10</span>,
+            <span class="dig">338</span>,
+            <span class="dig">212</span>
+        )
+        self.scroll_region = Region( <span class="cmt"># x,y,w,h</span>
+            self.window_region.getX() + <span class="dig">346</span>,
+            self.window_region.getY() + <span class="dig">8</span>,
+            <span class="dig">18</span>,
+            <span class="dig">216</span>
+        )
+        self.tab_region = Region( <span class="cmt"># x,y,w,h</span>
+            self.window_region.getX() + <span class="dig">1</span>,
+            self.window_region.getY() + <span class="dig">223</span>,
+            <span class="dig">383</span>,
+            <span class="dig">29</span>
+        )
+        <span class="cmt"># self.resource_region.highlight(1)
+</span>        <span class="cmt"># self.scroll_region.highlight(1)
+</span>        <span class="cmt"># self.tab_region.highlight(1)
+</span>
+    <span class="kw">def</span> select_tab(self, tab):
+        self.tab_region.<span class="skw">click</span>(self.tabs[tab])
+
+    <span class="kw">def</span> deposit_resources(self):
+        mh = MayorsHouse()
+        mh.goToSector().center()
+
+        log(<span class="str">"depositing resources"</span>)
+        self.open()
+        self.select_tab(<span class="str">'resources'</span>)
+        <span class="kw">while</span> True:
+            found = <span class="dig">0</span>
+            <span class="kw">for</span> key,resource <span class="kw">in</span> self.resources.iteritems():
+                log(<span class="str">"--checking %(key)s"</span> % { <span class="str">'key'</span>:key })
+                <span class="kw">while</span> self.resource_region.exists(resource):
+                    self.resource_region.<span class="skw">click</span>(resource)
+                    time.<span class="skw">sleep</span>(<span class="dig">0.3</span>)
+                    mh.deposit()
+                    time.<span class="skw">sleep</span>(<span class="dig">0.5</span>)
+                    found += <span class="dig">1</span>
+                    log(<span class="str">"----deposited %(key)s"</span> % { <span class="str">'key'</span>:key })
+                    self.open()
+            <span class="kw">if</span> found <span class="kw">is</span> <span class="dig">0</span> <span class="kw">and</span> <span class="kw">not</span> self.scroll_region.exists(Pattern(<img src="window_starmenu_scrollbottom.png" />)):
+                log(<span class="str">"all done, break!"</span>)
+                <span class="kw">break</span>
+            <span class="kw">else</span>:
+                self.scroll_region.wheel(WHEEL_DOWN, <span class="dig">1</span>)
+        self.close()
+
+    <span class="kw">def</span> dispatch_explorers(self):
+        self.open()
+        self.select_tab(<span class="str">'specialists'</span>)
+        <span class="kw">for</span> actor_type,pattern <span class="kw">in</span> self.actors[<span class="str">'explorers'</span>].iteritems():
+            log(<span class="str">'looking for %(actor_type)s'</span> % { <span class="str">'actor_type'</span>:actor_type})
+            <span class="kw">try</span>:
+                matches = self.resource_region.findAll(pattern)
+                <span class="kw">while</span> matches.hasNext():
+                    log(<span class="str">'found one!'</span>)
+                    match = matches.next()
+                    match.highlight(<span class="dig">1</span>)
+                    Actor(actor_type,match).act()
+                    self.open()
+            <span class="kw">except</span> FindFailed:
+                log(<span class="str">'didn\'t find any %(actor_type)s!'</span> % { <span class="str">'actor_type'</span>:actor_type})
+        self.close()
+
+    <span class="kw">def</span> dispatch_geologists(self):
+        self.open()
+        self.select_tab(<span class="str">'specialists'</span>)
+
+
+<span class="kw">class</span> Mailbox(BaseWindow):
+    <span class="str">"""The mailbox class. Used for accepting mail"""</span>
+    dimensions = { <span class="str">'width'</span>:<span class="dig">586</span>, <span class="str">'height'</span>:<span class="dig">395</span> }
+    offset = { <span class="str">'x'</span>:-<span class="dig">271</span>, <span class="str">'y'</span>:<span class="dig">0</span> }
+
+    <span class="kw">def</span> get_sub_regions(self):
+        self.subject_region = Region( <span class="cmt"># x,y,w,h</span>
+            self.window_region.getX() + <span class="dig">253</span>,
+            self.window_region.getY() + <span class="dig">56</span>,
+            <span class="dig">181</span>,
+            <span class="dig">152</span>
+        )
+        self.content_region = Region( <span class="cmt"># x,y,w,h</span>
+            self.window_region.getX() + <span class="dig">9</span>,
+            self.window_region.getY() + <span class="dig">237</span>,
+            <span class="dig">569</span>,
+            <span class="dig">150</span>
+        )
+
+    subjects = {
+        <span class="str">'explorer_has'</span> : Pattern(<img src="subject_explorer_has.png" />).similar(<span class="dig">0.60</span>),
+        <span class="str">'quest_reward'</span> : Pattern(<img src="subject_quest_reward.png" />).similar(<span class="dig">0.60</span>)
+    }
+
+    <span class="kw">def</span> get_mail(self):
+        self.open()
+        log(<span class="str">"checking mail"</span>)
+        <span class="kw">while</span> True:
+            found = <span class="dig">0</span>
+            <span class="kw">for</span> key, subject <span class="kw">in</span> self.subjects.iteritems():
+                log(<span class="str">"--checking %(key)s"</span> % { <span class="str">'key'</span>:key })
+                <span class="kw">while</span> self.subject_region.exists(subject):
+                    self.subject_region.<span class="skw">doubleClick</span>(subject)
+                    time.<span class="skw">sleep</span>(<span class="dig">0.6</span>)
+                    self.content_region.<span class="skw">click</span>(button_accept)
+                    time.<span class="skw">sleep</span>(<span class="dig">0.4</span>)
+                    found += <span class="dig">1</span>
+                    log(<span class="str">"----clicked on %(key)s"</span> % { <span class="str">'key'</span>:key })
+            <span class="kw">if</span> found == <span class="dig">0</span>:
+                log(<span class="str">"all done, break!"</span>)
+                <span class="kw">break</span>
+        self.close()
+
+<span class="kw">class</span> Actor(BaseWindow):
+    dimensions = { <span class="str">'width'</span>:<span class="dig">361</span>, <span class="str">'height'</span>:<span class="dig">432</span> }
+    offset = { <span class="str">'x'</span>:<span class="dig">5</span>, <span class="str">'y'</span>:-<span class="dig">19</span> }
+
+    <span class="kw">def</span> __init__(self, actor_type, match):
+        self.id = actor_type
+        self.<span class="skw">type</span> = actor_type
+
+        self.button_region = match
+        self.key_image = Pattern(<img src="window_agent_key.png" />).similar(<span class="dig">0.85</span>)
+
+        handle = open(os.path.join(getBundlePath(),<span class="str">'explorers.yml'</span>),<span class="str">'r'</span>)
+        actions = yaml.safe_load(handle)
+        handle.close()
+
+        self.action_str = actions[self.<span class="skw">type</span>][<span class="str">'action'</span>]
+        self.duration_str = actions[self.<span class="skw">type</span>][<span class="str">'duration'</span>]
+
+        self.action = Pattern(<span class="str">'actor_action_find_%(action)s.png'</span> % { <span class="str">'action'</span> : self.action_str }).similar(<span class="dig">0.96</span>)
+        self.duration = Pattern(<span class="str">'actor_action_find_%(action)s_%(duration)s.png'</span> % { <span class="str">'action'</span> : self.action_str, <span class="str">'duration'</span> : self.duration_str }).similar(<span class="dig">0.96</span>)
+
+    <span class="kw">def</span> get_sub_regions(self):
+        <span class="cmt"># this is the location of the name box for the initial window
+</span>        <span class="cmt"># but it is offset based on the size of the larger window
+</span>        <span class="cmt"># i'm lazy, sue me
+</span>        self.name_region = Region( <span class="cmt"># x,y,w,h</span>
+            self.window_region.getX() + <span class="dig">67</span>,
+            self.window_region.getY() + <span class="dig">27</span>,
+            <span class="dig">235</span>,
+            <span class="dig">19</span>
+        )
+        self.action_region = Region( <span class="cmt"># x,y,w,h</span>
+            self.window_region.getX() + <span class="dig">13</span>,
+            self.window_region.getY() + <span class="dig">181</span>,
+            <span class="dig">336</span>,
+            <span class="dig">135</span>
+        )
+        self.resolution_region = Region( <span class="cmt"># x,y,w,h</span>
+            self.window_region.getX() + <span class="dig">13</span>,
+            self.window_region.getY() + <span class="dig">356</span>,
+            <span class="dig">336</span>,
+            <span class="dig">65</span>
+        )
+
+    <span class="kw">def</span> act(self):
+        self.open()
+        mouseMove(self.window_region.getTopLeft())
+        self.choose_action()
+        self.choose_duration()
+
+    <span class="kw">def</span> choose_action(self):
+        self.action_region.<span class="skw">click</span>(self.action)
+        mouseMove(self.window_region.getTopLeft())
+
+    <span class="kw">def</span> choose_duration(self):
+        self.action_region.<span class="skw">click</span>(self.duration)
+        self.resolution_region.<span class="skw">click</span>(button_ok)
+
+<span class="kw">class</span> Location(object):
+    <span class="str">"""An abstract for functionality shared between clickable locations"""</span>
+    <span class="cmt"># sector
+</span>
+    <span class="kw">def</span> goToSector(self):
+        <span class="kw">global</span> current_sector
+        <span class="kw">if</span> self.sector != current_sector:
+            <span class="skw">type</span>(<span class="str">"0"</span>)
+            <span class="skw">sleep</span>(<span class="dig">0.5</span>)
+            <span class="skw">type</span>(self.sector)
+            <span class="skw">sleep</span>(<span class="dig">0.5</span>)
+            current_sector = self.sector
+
+<span class="kw">class</span> Deposit(Location):
+    <span class="str">"""Deposits are meat, fish, etc."""</span>
+    <span class="kw">pass</span>
+
+<span class="kw">class</span> Building(Location):
+    <span class="str">"""Buildings have a distinct appearance and can be found easily"""</span>
+    <span class="cmt"># key_image
+</span>
+    <span class="kw">def</span> center(self):
+        <span class="kw">if</span> exists(self.key_image):
+            <span class="skw">dragDrop</span>(getLastMatch(), getCenter())
+        <span class="kw">else</span>:
+            <span class="kw">raise</span> <span class="str">"Couldn't find my key image!"</span>
+
+    <span class="kw">def</span> deposit(self):
+        mouseMove(getCenter().left(<span class="dig">100</span>))
+        <span class="skw">sleep</span>(<span class="dig">0.5</span>)
+        <span class="skw">click</span>(getCenter())
+
+<span class="kw">class</span> MayorsHouse(Building):
+    sector = <span class="str">"1"</span>
+    key_image = Pattern(<img src="building_mayors_house.png" />)
+
+browser.focus()
+<span class="cmt">#Mailbox().get_mail()
+</span><span class="cmt"># StarMenu().deposit_resources()
+</span><span class="cmt">#StarMenu().dispatch_explorers()
+</span>
+sm = StarMenu()
+sm.open()
+<span class="cmt">#sm.select_tab('buffs')
+</span>sm.scroll_region.highlight(<span class="dig">2</span>)
+mouseMove(sm.scroll_region)
+wheel(WHEEL_DOWN,<span class="dig">15</span>)
+sm.scroll_region.<span class="skw">find</span>(Pattern(<img src="window_starmenu_scrollbottom.png" />).similar(<span class="dig">0.98</span>)).highlight(<span class="dig">5</span>)
+</pre>
+</body>
+</html>
