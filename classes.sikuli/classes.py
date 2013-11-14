@@ -33,6 +33,10 @@ button_accept  = Pattern("button_accept.png")
 scroll_not_bottom = Pattern("scroll_not_bottom.png").similar(0.98)
 current_sector = None
 
+buff_marble = Pattern("buff_marble.png").similar(0.98)
+buff_wheat = Pattern("buff_wheat.png").similar(0.98)
+buff_water = Pattern("buff_water.png").similar(0.98)
+
 class BaseWindow(object):
     """An abstract for functionality shared between things that pop up windows"""
     # set by child elements
@@ -55,7 +59,7 @@ class BaseWindow(object):
             self.key_image = Pattern("window_%(id)s_key.png" % {'id':self.id}).similar(0.85)
         if not hasattr(self, 'button'):
             self.button = Pattern("button_%(id)s.png" % {'id':self.id}).similar(0.60)
-        self.get_button_region()
+            self.get_button_region()
 
     def open(self):
         self.show_window()
@@ -408,47 +412,113 @@ class MayorsHouse(Building):
     sector = "1"
     key_image = Pattern("building_mayors_house.png")
 
-class Golem(BaseWindow):
-    def open(self):
-        sm = StarMenu()
-        sm.open()
-        sm.select_tab('buffs')
-        while True:
-            log("checking if any resources exist")
-            # check if one of the key buffs is visible
-            if sm.resource_region.exists(buff_marble):
-                log("found marble buff!")
-                sm.resource_region.click(buff_marble)
-                break
-            elif sm.resource_region.exists(buff_wheat):
-                log("found wheat buff!")
-                sm.resource_region.click(buff_wheat)
-                break
-            elif sm.resource_region.exists(buff_water):
-                log("found water buff!")
-                sm.resource_region.click(buff_water)
-                break
-            else:
-                log("none existed, checking if at the bottom")
-                if sm.scroll_region.exists(scroll_not_bottom):
-                    log("not at the bottom, scrolling down")
-                    for i in range(6):
-                        sm.scroll_region.click(arrow_down)
-                else:
-                    log("at the bottom, none found, so sad!")
-                    break
+class GolemWindow(BaseWindow):
+    dimensions = { 'width':218, 'height':226 }
+    offset = { 'x':-25, 'y':-190 }
 
+    button = None
+
+    def get_sub_regions(self):
+        self.resource_region = Region( # x,y,w,h
+            self.window_region.getX() + 10,
+            self.window_region.getY() + 38,
+            175,
+            147
+        )
+        self.scroll_region = Region( # x,y,w,h
+            self.window_region.getX() + 192,
+            self.window_region.getY() + 38,
+            19,
+            145
+        )
+        self.qty_region = Region( # x,y,w,h
+            self.window_region.getX() + -218,
+            self.window_region.getY() + 199,
+            180,
+            35
+        )
+        self.qty_input = Region( # x,y,w,h
+            self.window_region.getX() + -144,
+            self.window_region.getY() + 199,
+            20,
+            17
+        )
+        self.resolution_region = Region( # x,y,w,h
+            self.window_region.getX() + -232,
+            self.window_region.getY() + 276,
+            207,
+            43
+        )
+
+    def show_window(self):
+        try:
+            find(self.key_image) # screen context
+        except FindFailed:
+            sm = StarMenu()
+            sm.open()
+            sm.select_tab('buffs')
+            while True:
+                log("checking if any resources exist")
+                # check if one of the key buffs is visible
+                if sm.resource_region.exists(buff_marble):
+                    log("found marble buff!")
+                    sm.resource_region.click(buff_marble)
+                    break
+                elif sm.resource_region.exists(buff_wheat):
+                    log("found wheat buff!")
+                    sm.resource_region.click(buff_wheat)
+                    break
+                elif sm.resource_region.exists(buff_water):
+                    log("found water buff!")
+                    sm.resource_region.click(buff_water)
+                    break
+                else:
+                    log("none existed, checking if at the bottom")
+                    if sm.scroll_region.exists(scroll_not_bottom):
+                        log("not at the bottom, scrolling down")
+                        for i in range(6):
+                            sm.scroll_region.click(arrow_down)
+                    else:
+                        log("at the bottom, none found, so sad!")
+                        break
+
+    def scroll_to(self, buff):
+        log("scroll_to called")
+        while not self.resource_region.exists(buff):
+            log("buff doesn't exist, scrolling")
+            for i in range(2):
+                log("  scroll")
+                self.scroll_region.click(arrow_down)
+
+    def step1(self, amount):
+        self.scroll_to(buff_marble)
+        stacks_to_go = math.ceil(amount / 2500)
+        for i in xrange(0..stacks_to_go):
+            self.resource_region.click(buff_wheat)
+            self.qty_input.click()
+        pass
+
+    def step2(self, amount):
+        pass
+
+    def step3(self, amount):
+        pass
+
+    def set_qty(self, number):
+        self.qty_input.click()
+        type
 
 browser.focus()
-Mailbox().get_mail()
+# Mailbox().get_mail()
 # StarMenu().deposit_resources()
-StarMenu().dispatch_explorers()
-
-# buff_marble = Pattern("buff_marble.png").similar(0.98)
-# buff_wheat = Pattern("buff_wheat.png").similar(0.98)
-# buff_water = Pattern("buff_water.png").similar(0.98)
-
-
+# StarMenu().dispatch_explorers()
+# gw = GolemWindow()
+# gw.open()
+# gw.qty_input.highlight(1)
+# gw.qty_input.click()
+# gw.qty_input.keyDown("a", Key.CMD)
+keyDown('a' + KeyModifier.CMD)
+# gw.qty_input.paste("25")
 
 # if one of the buffs exists, click it
 # else

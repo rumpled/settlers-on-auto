@@ -1,9 +1,9 @@
 explorer:
   action: treasure
-  duration: long
+  duration: very_long
 savage_scout:
-  action: adventure
-  duration: medium
+  action: treasure
+  duration: very_long
 experienced_explorer:
-  action: adventure
-  duration: medium
+  action: treasure
+  duration: very_long
