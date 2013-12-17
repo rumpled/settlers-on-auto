@@ -1,0 +1,2 @@
+# ignore player specific explorer options
+*.explorers.yml
