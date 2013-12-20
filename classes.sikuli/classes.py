@@ -512,15 +512,3 @@ browser.focus()
 # Mailbox().get_mail()
 # StarMenu().deposit_resources()
 # StarMenu().dispatch_explorers()
-# gw = GolemWindow()
-# gw.open()
-# gw.qty_input.highlight(1)
-# gw.qty_input.click()
-# gw.qty_input.keyDown("a", Key.CMD)
-keyDown('a' + KeyModifier.CMD)
-# gw.qty_input.paste("25")
-
-# if one of the buffs exists, click it
-# else
-# if we're at the bottom, raise exception
-# otherwise, scroll down
