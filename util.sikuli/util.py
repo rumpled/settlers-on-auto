@@ -88,7 +88,7 @@ building_regions = {
 def ph_test():
     tl = find(building_windows['provision_house']['top_left'])
     #tl.highlight(1)
-    b = find(building_windows['provision_house']['bottom_halloween'])
+    b = find(building_windows['provision_house']['bottom'])
     #b.highlight(1)
 
     building_regions['provision_house']['main'] = Region(tl.x, tl.y, (b.x+b.w)-tl.x, (b.y+b.h)-tl.y)
