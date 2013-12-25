@@ -229,28 +229,38 @@ class StarMenu(BaseWindow):
 
     def deposit_resources(self):
         mh = MayorsHouse()
+        log('going to sector / center')
         mh.goToSector().center()
+        log('went!')
 
         log("depositing resources")
         self.open()
         self.select_tab('resources')
         while True:
-            found = 0
+            total = 0
             for key,resource in self.resources.iteritems():
-                log("--checking %(key)s" % { 'key':key })
+                log("--checking for %(key)s" % { 'key':key })
+                found = 0
                 while self.resource_region.exists(resource):
                     self.resource_region.click(resource)
                     time.sleep(0.3)
                     mh.deposit()
                     time.sleep(0.5)
+                    total += 1
                     found += 1
                     log("----deposited %(key)s" % { 'key':key })
                     self.open()
-            if found is 0 and not self.scroll_region.exists(Pattern("window_starmenu_scrollbottom.png")):
-                log("all done, break!")
-                break
+                    if found is not 0:
+                        log("deposited %(found)i %(resource)s" % { 'found':found, 'resource':key })
+                        found = 0
+            if total is 0 and self.scroll_region.exists(scroll_not_bottom):
+                log("not at the bottom, scrolling down")
+                for i in range(3):
+                    self.scroll_region.click(arrow_down)
             else:
-                self.scroll_region.wheel(WHEEL_DOWN, 1)
+                log("at the bottom, none found, so sad!")
+                break
+            #self.scroll_region.wheel(WHEEL_DOWN, 1)
         self.close()
 
     def dispatch_explorers(self):
@@ -382,7 +392,11 @@ class Location(object):
 
     def goToSector(self):
         global current_sector
+        log('current_sector is set to %(sector)s' % { 'sector':current_sector })
+        log('self secotr is set to %(sector)s' % { 'sector':self.sector })
+
         if self.sector != current_sector:
+            log('moving to my sector!')
             type("0")
             sleep(0.5)
             type(self.sector)
