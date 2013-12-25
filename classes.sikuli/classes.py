@@ -389,6 +389,8 @@ class Location(object):
             sleep(0.5)
             current_sector = self.sector
 
+        return self
+
 class Deposit(Location):
     """Deposits are meat, fish, etc."""
     pass
