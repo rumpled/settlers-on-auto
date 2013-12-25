@@ -269,9 +269,9 @@ class StarMenu(BaseWindow):
                     found += 1
                     log("----deposited %(key)s" % { 'key':key })
                     self.open()
-                    if found is not 0:
-                        log("deposited %(found)i %(resource)s" % { 'found':found, 'resource':key })
-                        found = 0
+                if found is not 0:
+                    log("--deposited %(found)i %(resource)s" % { 'found':found, 'resource':key })
+                    found = 0
             if total is 0 and self.scroll_region.exists(scroll_not_bottom):
                 log("not at the bottom, scrolling down")
                 for i in range(3):
