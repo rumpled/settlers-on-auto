@@ -6,7 +6,7 @@ import os.path
 import datetime
 import yaml
 
-Settings.MoveMouseDelay = 0
+Settings.MoveMouseDelay = 0.5
 Settings.ActionLogs = False
 Settings.InfoLogs = True
 Settings.DebugLogs = True
@@ -92,6 +92,9 @@ class BaseWindow(object):
 
     def get_sub_regions(self):
         raise NotImplementedError # stub
+
+class TradeOffice(BaseWindow):
+    pass
 
 class ProvisionHouse(BaseWindow):
     dimensions = { 'width':578, 'height':415 }
@@ -412,16 +415,19 @@ class Location(object):
     def goToSector(self):
         global current_sector
         log('current_sector is set to %(sector)s' % { 'sector':current_sector })
-        log('self secotr is set to %(sector)s' % { 'sector':self.sector })
+        log('self sector is set to %(sector)s' % { 'sector':self.sector })
 
         if self.sector != current_sector:
             log('moving to my sector!')
             type("0")
+            log('typed 0')
             sleep(0.5)
             type(self.sector)
+            log('typed %(sector)s' % { 'sector':self.sector })
             sleep(0.5)
             current_sector = self.sector
 
+        log('returning')
         return self
 
 class Deposit(Location):
@@ -434,6 +440,7 @@ class Building(Location):
 
     def center(self):
         if exists(self.key_image):
+            getLastMatch().highlight(2)
             dragDrop(getLastMatch(), getCenter())
         else:
             raise "Couldn't find my key image!"
@@ -545,5 +552,7 @@ class GolemWindow(BaseWindow):
 
 browser.focus()
 # Mailbox().get_mail()
-# StarMenu().deposit_resources()
-# StarMenu().dispatch_explorers()
+#StarMenu().deposit_resources()
+StarMenu().dispatch_explorers()
+
+#MayorsHouse().goToSector().center()
