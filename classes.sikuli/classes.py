@@ -37,6 +37,9 @@ buff_marble = Pattern("buff_marble.png").similar(0.98)
 buff_wheat = Pattern("buff_wheat.png").similar(0.98)
 buff_water = Pattern("buff_water.png").similar(0.98)
 
+debug = False
+debug_highlight_duration = 2
+
 class BaseWindow(object):
     """An abstract for functionality shared between things that pop up windows"""
     # set by child elements
@@ -48,6 +51,8 @@ class BaseWindow(object):
     # key_image_match | stores key_image match
 
     def __init__(self):
+        if debug:
+            log("init %(classname)s" % {'classname':str(self.__class__.__name__).lower()})
         self.key = None # key to open window
         self.button_region = None # stores button match
         self.window_region = None # window's whole region
@@ -55,10 +60,16 @@ class BaseWindow(object):
         # this might be declared in a sub-class
         if not hasattr(self, 'id'):
             self.id = str(self.__class__.__name__).lower()
+            if debug:
+                log("using automatic id " + str(self.__class__.__name__).lower())
         if not hasattr(self, 'key_image'):
             self.key_image = Pattern("window_%(id)s_key.png" % {'id':self.id}).similar(0.85)
+            if debug:
+                log("using automatic key image " + str(self.key_image))
         if not hasattr(self, 'button'):
             self.button = Pattern("button_%(id)s.png" % {'id':self.id}).similar(0.60)
+            if debug:
+                log("using automatic button " + str(self.button))
             self.get_button_region()
 
     def open(self):
@@ -71,13 +82,19 @@ class BaseWindow(object):
                 self.dimensions['width'],
                 self.dimensions['height']
             )
+            if debug:
+                self.window_region.highlight(debug_highlight_duration)
             self.get_sub_regions()
 
     # override this to have a custom window opening method, such as mayor's house
     def show_window(self):
         try:
             find(self.key_image) # screen context
+            if debug:
+                getLastMatch().highlight(debug_highlight_duration)
         except FindFailed:
+            if debug:
+                self.button_region.highlight(debug_highlight_duration)
             self.button_region.click()
 
     def close(self):
@@ -325,6 +342,11 @@ class Mailbox(BaseWindow):
             569,
             150
         )
+
+        if debug:
+            log('highlighting sub_regions')
+            self.subject_region.highlight(debug_highlight_duration)
+            self.content_region.highlight(debug_highlight_duration)
 
     subjects = {
         'explorer_has' : Pattern("subject_explorer_has.png").similar(0.60),
