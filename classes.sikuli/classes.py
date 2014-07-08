@@ -30,6 +30,8 @@ arrow_down = Pattern("arrow_down.png")
 button_ok = Pattern("button_ok.png")
 button_close = Pattern("button_close.png")
 button_accept  = Pattern("button_accept.png")
+button_accept_storehouse  = Pattern("button_accept_storehouse.png")
+button_accept_starmenu  = Pattern("button_accept_starmenu.png")
 scroll_not_bottom = Pattern("scroll_not_bottom.png").similar(0.98)
 current_sector = None
 
@@ -326,21 +328,21 @@ class StarMenu(BaseWindow):
 
 class Mailbox(BaseWindow):
     """The mailbox class. Used for accepting mail"""
-    dimensions = { 'width':586, 'height':395 }
-    offset = { 'x':-271, 'y':0 }
+    dimensions = { 'width':723, 'height':545 }
+    offset = { 'x':-340, 'y':0 }
 
     def get_sub_regions(self):
         self.subject_region = Region( # x,y,w,h
-            self.window_region.getX() + 253,
-            self.window_region.getY() + 56,
-            181,
-            152
+            self.window_region.getX() + 87,
+            self.window_region.getY() + 60,
+            608,
+            204
         )
         self.content_region = Region( # x,y,w,h
-            self.window_region.getX() + 9,
-            self.window_region.getY() + 237,
-            569,
-            150
+            self.window_region.getX() + 15,
+            self.window_region.getY() + 369,
+            668,
+            164
         )
 
         if debug:
@@ -363,7 +365,7 @@ class Mailbox(BaseWindow):
                 while self.subject_region.exists(subject):
                     self.subject_region.doubleClick(subject)
                     time.sleep(0.6)
-                    self.content_region.click(button_accept)
+                    self.press_accept()
                     time.sleep(0.4)
                     found += 1
                     log("----clicked on %(key)s" % { 'key':key })
@@ -371,6 +373,29 @@ class Mailbox(BaseWindow):
                 log("all done, break!")
                 break
         self.close()
+
+    def press_accept(self):
+        button_pressed = False
+        try:
+            self.content_region.click(button_accept_storehouse)
+            button_pressed = True
+        except FindFailed:
+            pass
+
+        try:
+            self.content_region.click(button_accept_starmenu)
+            button_pressed = True
+        except FindFailed:
+            pass
+
+        try:
+            self.content_region.click(button_accept)
+            button_pressed = True
+        except FindFailed:
+            pass
+
+        if button_pressed == False:
+            raise FindFailed("No accept button was found on a mail message!")
 
 class Actor(BaseWindow):
     dimensions = { 'width':361, 'height':432 }
